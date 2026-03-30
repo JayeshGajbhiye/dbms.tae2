@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Student Portal – PHP & MySQL</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<!-- ─── Sidebar ─────────────────────────────────────── -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-logo">
+    <h1>Student<span>Portal</span></h1>
+    <small>PHP + MySQL Management System</small>
+  </div>
+
+  <nav class="nav-links">
+    <button class="nav-link active" data-page="dashboard" onclick="navigate('dashboard')">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+        <rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
+      </svg>
+      Dashboard
+    </button>
+
+    <button class="nav-link" data-page="students" onclick="navigate('students')">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+        <circle cx="9" cy="7" r="4"/>
+        <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+      </svg>
+      All Students
+      <span class="nav-badge" id="nav-count">…</span>
+    </button>
+
+    <button class="nav-link" data-page="add" onclick="navigate('add')">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/>
+        <line x1="8" y1="12" x2="16" y2="12"/>
+      </svg>
+      Add Student
+    </button>
+  </nav>
+
+  <div class="sidebar-footer">
+    Built with PHP 8 · MySQL · Vanilla JS<br>
+    &copy; <?= date('Y') ?> Student Portal
+  </div>
+</aside>
+
+<!-- ─── Main Content ──────────────────────────────────── -->
+<div class="main">
+
+  <!-- Topbar -->
+  <header class="topbar">
+    <div style="display:flex;align-items:center;gap:14px">
+      <button class="hamburger" onclick="toggleSidebar()" aria-label="Toggle menu">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="3" y1="6"  x2="21" y2="6"/>
+          <line x1="3" y1="12" x2="21" y2="12"/>
+          <line x1="3" y1="18" x2="21" y2="18"/>
+        </svg>
+      </button>
+      <span class="topbar-title">Dashboard</span>
+    </div>
+    <div class="topbar-actions">
+      <button class="btn btn-primary" onclick="navigate('add')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+        </svg>
+        Add Student
+      </button>
+    </div>
+  </header>
+
+  <!-- ═══════════════════════════════════════════════════ -->
+  <!--  PAGE: DASHBOARD                                    -->
+  <!-- ═══════════════════════════════════════════════════ -->
+  <section class="page active" id="page-dashboard">
+
+    <div class="stats-grid">
+      <div class="stat-card amber">
+        <div class="stat-label">Total Students</div>
+        <div class="stat-value" id="stat-total">–</div>
+        <div class="stat-sub">All enrolled</div>
+      </div>
+      <div class="stat-card green">
+        <div class="stat-label">Active</div>
+        <div class="stat-value" id="stat-active">–</div>
+        <div class="stat-sub">Currently enrolled</div>
+      </div>
+      <div class="stat-card red">
+        <div class="stat-label">Inactive</div>
+        <div class="stat-value" id="stat-inactive">–</div>
+        <div class="stat-sub">On hold</div>
+      </div>
+      <div class="stat-card cyan">
+        <div class="stat-label">Graduated</div>
+        <div class="stat-value" id="stat-graduated">–</div>
+        <div class="stat-sub">Completed programs</div>
+      </div>
+      <div class="stat-card yellow">
+        <div class="stat-label">Courses</div>
+        <div class="stat-value" id="stat-courses">–</div>
+        <div class="stat-sub">Distinct programs</div>
+      </div>
+    </div>
+
+    <!-- Recent students preview -->
+    <div class="section-header">
+      <h2>Recent Additions</h2>
+      <button class="btn btn-outline btn-sm" onclick="navigate('students')">View All →</button>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Student</th><th>Course</th><th>Phone</th><th>Status</th><th>Joined</th>
+          </tr>
+        </thead>
+        <tbody id="recent-tbody">
+          <tr class="loading-row"><td colspan="5"><span class="spinner"></span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════ -->
+  <!--  PAGE: ALL STUDENTS                                 -->
+  <!-- ═══════════════════════════════════════════════════ -->
+  <section class="page" id="page-students">
+
+    <div class="filters">
+      <div class="search-box">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
+        </svg>
+        <input type="text" id="search-input" placeholder="Search by name, email, phone…"
+               oninput="onSearchInput()" />
+      </div>
+      <select class="filter-select" id="course-filter" onchange="loadStudents()">
+        <option value="">All Courses</option>
+      </select>
+      <select class="filter-select" id="status-filter" onchange="loadStudents()">
+        <option value="">All Status</option>
+        <option>Active</option>
+        <option>Inactive</option>
+        <option>Graduated</option>
+      </select>
+      <button class="btn btn-outline btn-sm" onclick="loadStudents()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="23 4 23 10 17 10"/>
+          <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+        </svg>
+        Refresh
+      </button>
+    </div>
+
+    <div class="section-header">
+      <h2>Students</h2>
+      <span id="student-count" style="color:var(--muted);font-size:.85rem"></span>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Student</th>
+            <th>Phone</th>
+            <th>Course</th>
+            <th>Gender</th>
+            <th>DOB</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="students-tbody">
+          <tr class="loading-row"><td colspan="7"><span class="spinner"></span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════ -->
+  <!--  PAGE: ADD STUDENT                                  -->
+  <!-- ═══════════════════════════════════════════════════ -->
+  <section class="page" id="page-add">
+    <div style="max-width:680px;margin:0 auto">
+
+      <div style="margin-bottom:28px">
+        <h2 style="font-family:'Syne',sans-serif;font-size:1.4rem;font-weight:700">Enrol New Student</h2>
+        <p style="color:var(--muted);font-size:.875rem;margin-top:4px">Fill in all the required fields to register a student.</p>
+      </div>
+
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:32px">
+        <form id="add-form" onsubmit="event.preventDefault(); submitAdd()">
+          <div class="form-grid">
+
+            <div class="form-group">
+              <label>Full Name *</label>
+              <input type="text" name="full_name" placeholder="e.g. Arjun Sharma" required />
+              <span class="field-error"></span>
+            </div>
+
+            <div class="form-group">
+              <label>Email Address *</label>
+              <input type="email" name="email" placeholder="student@email.com" required />
+              <span class="field-error"></span>
+            </div>
+
+            <div class="form-group">
+              <label>Phone Number *</label>
+              <input type="tel" name="phone" placeholder="98XXXXXXXX" required />
+              <span class="field-error"></span>
+            </div>
+
+            <div class="form-group">
+              <label>Date of Birth *</label>
+              <input type="date" name="date_of_birth" required />
+              <span class="field-error"></span>
+            </div>
+
+            <div class="form-group">
+              <label>Course / Programme *</label>
+              <select name="course" required>
+                <option value="">— Select Course —</option>
+                <option>Computer Science</option>
+                <option>Information Technology</option>
+                <option>Electronics</option>
+                <option>Mechanical Engineering</option>
+                <option>Civil Engineering</option>
+                <option>Electrical Engineering</option>
+                <option>Data Science</option>
+                <option>Biotechnology</option>
+                <option>MBA</option>
+                <option>MCA</option>
+              </select>
+              <span class="field-error"></span>
+            </div>
+
+            <div class="form-group">
+              <label>Gender *</label>
+              <select name="gender" required>
+                <option value="">— Select Gender —</option>
+                <option>Male</option>
+                <option>Female</option>
+                <option>Other</option>
+              </select>
+              <span class="field-error"></span>
+            </div>
+
+            <div class="form-group">
+              <label>Enrolment Status</label>
+              <select name="status">
+                <option value="Active">Active</option>
+                <option value="Inactive">Inactive</option>
+                <option value="Graduated">Graduated</option>
+              </select>
+            </div>
+
+            <div class="form-group full">
+              <label>Address *</label>
+              <textarea name="address" placeholder="Full address…" required></textarea>
+              <span class="field-error"></span>
+            </div>
+
+          </div><!-- /form-grid -->
+
+          <div style="display:flex;gap:12px;justify-content:flex-end;margin-top:24px">
+            <button type="button" class="btn btn-outline" onclick="document.getElementById('add-form').reset()">Clear</button>
+            <button type="submit" class="btn btn-primary" id="btn-add-submit">Add Student</button>
+          </div>
+        </form>
+      </div>
+
+    </div>
+  </section>
+
+</div><!-- /main -->
+
+<!-- ─── Edit Modal ────────────────────────────────────── -->
+<div class="modal-backdrop" id="edit-modal" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>Edit Student</h2>
+      <button class="modal-close" onclick="closeModal()">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <form id="edit-form" onsubmit="event.preventDefault(); submitEdit()">
+        <div class="form-grid">
+
+          <div class="form-group">
+            <label>Full Name *</label>
+            <input type="text" name="full_name" required />
+            <span class="field-error"></span>
+          </div>
+
+          <div class="form-group">
+            <label>Email Address *</label>
+            <input type="email" name="email" required />
+            <span class="field-error"></span>
+          </div>
+
+          <div class="form-group">
+            <label>Phone Number *</label>
+            <input type="tel" name="phone" required />
+            <span class="field-error"></span>
+          </div>
+
+          <div class="form-group">
+            <label>Date of Birth *</label>
+            <input type="date" name="date_of_birth" required />
+            <span class="field-error"></span>
+          </div>
+
+          <div class="form-group">
+            <label>Course / Programme *</label>
+            <select name="course" required>
+              <option value="">— Select —</option>
+              <option>Computer Science</option>
+              <option>Information Technology</option>
+              <option>Electronics</option>
+              <option>Mechanical Engineering</option>
+              <option>Civil Engineering</option>
+              <option>Electrical Engineering</option>
+              <option>Data Science</option>
+              <option>Biotechnology</option>
+              <option>MBA</option>
+              <option>MCA</option>
+            </select>
+            <span class="field-error"></span>
+          </div>
+
+          <div class="form-group">
+            <label>Gender *</label>
+            <select name="gender" required>
+              <option value="">— Select —</option>
+              <option>Male</option>
+              <option>Female</option>
+              <option>Other</option>
+            </select>
+            <span class="field-error"></span>
+          </div>
+
+          <div class="form-group">
+            <label>Status</label>
+            <select name="status">
+              <option value="Active">Active</option>
+              <option value="Inactive">Inactive</option>
+              <option value="Graduated">Graduated</option>
+            </select>
+          </div>
+
+          <div class="form-group full">
+            <label>Address *</label>
+            <textarea name="address" required></textarea>
+            <span class="field-error"></span>
+          </div>
+
+        </div>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" id="btn-edit-submit" onclick="submitEdit()">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- ─── Toast Container ───────────────────────────────── -->
+<div id="toast-container"></div>
+
+<script src="js/app.js"></script>
+<script>
+// ── Recent students on dashboard ──────────────────────────
+(async function loadRecent() {
+  const data = await fetch('api.php?action=list').then(r => r.json());
+  const tbody = document.getElementById('recent-tbody');
+  if (!data.success || !data.students.length) {
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:24px">No students yet.</td></tr>';
+    return;
+  }
+  const recent = data.students.slice(0, 6);
+  tbody.innerHTML = recent.map(s => {
+    const initials = s.full_name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
+    const badgeClass = {Active:'badge-active',Inactive:'badge-inactive',Graduated:'badge-graduated'}[s.status]??'';
+    const date = new Date(s.created_at).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});
+    return `<tr>
+      <td><div class="td-name">
+        <div class="avatar">${initials}</div>
+        <div><strong>${s.full_name}</strong><small>${s.email}</small></div>
+      </div></td>
+      <td>${s.course}</td>
+      <td>${s.phone}</td>
+      <td><span class="badge ${badgeClass}">${s.status}</span></td>
+      <td>${date}</td>
+    </tr>`;
+  }).join('');
+  document.getElementById('nav-count').textContent = data.students.length;
+})();
+</script>
+
+</body>
+</html>
