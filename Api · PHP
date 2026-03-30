@@ -1,0 +1,71 @@
+<?php
+// ============================================================
+//  api.php  –  JSON API endpoint (handles all AJAX requests)
+// ============================================================
+header('Content-Type: application/json');
+header('X-Content-Type-Options: nosniff');
+
+require_once __DIR__ . '/includes/Student.php';
+
+$action = $_REQUEST['action'] ?? '';
+
+try {
+    switch ($action) {
+
+        // ── GET all students ────────────────────────────────
+        case 'list':
+            $search = trim($_GET['search'] ?? '');
+            $course = trim($_GET['course'] ?? '');
+            $status = trim($_GET['status'] ?? '');
+            echo json_encode([
+                'success'  => true,
+                'students' => Student::getAll($search, $course, $status),
+            ]);
+            break;
+
+        // ── GET one student (for edit modal) ───────────────
+        case 'get':
+            $id = (int)($_GET['id'] ?? 0);
+            $s  = Student::getOne($id);
+            echo json_encode($s ? ['success' => true, 'student' => $s]
+                                : ['success' => false, 'message' => 'Not found']);
+            break;
+
+        // ── CREATE ──────────────────────────────────────────
+        case 'create':
+            $data   = json_decode(file_get_contents('php://input'), true) ?? $_POST;
+            $result = Student::create($data);
+            echo json_encode($result);
+            break;
+
+        // ── UPDATE ──────────────────────────────────────────
+        case 'update':
+            $id     = (int)($_GET['id'] ?? 0);
+            $data   = json_decode(file_get_contents('php://input'), true) ?? $_POST;
+            $result = Student::update($id, $data);
+            echo json_encode($result);
+            break;
+
+        // ── DELETE ──────────────────────────────────────────
+        case 'delete':
+            $id     = (int)($_GET['id'] ?? 0);
+            $result = Student::delete($id);
+            echo json_encode($result);
+            break;
+
+        // ── STATS for dashboard ─────────────────────────────
+        case 'stats':
+            echo json_encode(['success' => true, 'stats' => Student::stats()]);
+            break;
+
+        // ── COURSES list ────────────────────────────────────
+        case 'courses':
+            echo json_encode(['success' => true, 'courses' => Student::courses()]);
+            break;
+
+        default:
+            echo json_encode(['success' => false, 'message' => 'Unknown action']);
+    }
+} catch (Exception $e) {
+    echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+}
