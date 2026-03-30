@@ -1,0 +1,13 @@
+# ── PHP / Server ──────────────────────────────────────────
+*.log
+*.cache
+/vendor/
+
+# ── IDE / OS ───────────────────────────────────────────────
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# ── Sensitive config (never commit real credentials) ───────
+# includes/config.php      ← uncomment this line in production
