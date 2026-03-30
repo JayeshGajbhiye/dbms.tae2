@@ -1,0 +1,45 @@
+-- ============================================================
+--  Student Portal Database Schema
+--  File: database.sql
+--  Run this script first in phpMyAdmin or MySQL CLI
+-- ============================================================
+
+CREATE DATABASE IF NOT EXISTS student_portal
+  CHARACTER SET utf8mb4
+  COLLATE utf8mb4_unicode_ci;
+
+USE student_portal;
+
+-- ─────────────────────────────────────────────
+--  Table: students
+-- ─────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS students (
+    id            INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    full_name     VARCHAR(100)    NOT NULL,
+    email         VARCHAR(150)    NOT NULL UNIQUE,
+    phone         VARCHAR(20)     NOT NULL,
+    course        VARCHAR(100)    NOT NULL,
+    gender        ENUM('Male','Female','Other') NOT NULL,
+    date_of_birth DATE            NOT NULL,
+    address       TEXT            NOT NULL,
+    status        ENUM('Active','Inactive','Graduated') NOT NULL DEFAULT 'Active',
+    created_at    TIMESTAMP       DEFAULT CURRENT_TIMESTAMP,
+    updated_at    TIMESTAMP       DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+
+-- ─────────────────────────────────────────────
+--  Index for faster search
+-- ─────────────────────────────────────────────
+CREATE INDEX idx_email  ON students (email);
+CREATE INDEX idx_course ON students (course);
+CREATE INDEX idx_status ON students (status);
+
+-- ─────────────────────────────────────────────
+--  Sample Data
+-- ─────────────────────────────────────────────
+INSERT INTO students (full_name, email, phone, course, gender, date_of_birth, address, status) VALUES
+('Arjun Sharma',   'arjun.sharma@email.com',   '9876543210', 'Computer Science',       'Male',   '2002-03-15', '12 MG Road, Latur, Maharashtra',      'Active'),
+('Priya Desai',    'priya.desai@email.com',    '9123456780', 'Information Technology', 'Female', '2003-07-22', '45 Gandhi Nagar, Pune, Maharashtra',   'Active'),
+('Rahul Patil',    'rahul.patil@email.com',    '9988776655', 'Electronics',            'Male',   '2001-11-10', '78 Shivaji Chowk, Solapur, MH',       'Active'),
+('Sneha Kulkarni', 'sneha.k@email.com',        '9070808090', 'Mechanical Engineering', 'Female', '2002-05-30', '23 Phadke Road, Aurangabad, MH',      'Inactive'),
+('Vikram Joshi',   'vikram.joshi@email.com',   '9445566778', 'Civil Engineering',      'Male',   '2000-01-08', '67 Nehru Street, Nagpur, Maharashtra', 'Graduated');
