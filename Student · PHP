@@ -1,0 +1,135 @@
+<?php
+// ============================================================
+//  includes/Student.php  –  Student Model (CRUD)
+// ============================================================
+require_once __DIR__ . '/config.php';
+
+class Student {
+
+    // ── INSERT ──────────────────────────────────────────────
+    public static function create(array $d): array {
+        $pdo = getDB();
+        // Check duplicate email
+        $chk = $pdo->prepare('SELECT id FROM students WHERE email = ?');
+        $chk->execute([$d['email']]);
+        if ($chk->fetch()) {
+            return ['success' => false, 'message' => 'Email already registered.'];
+        }
+
+        $sql = 'INSERT INTO students
+                    (full_name, email, phone, course, gender, date_of_birth, address, status)
+                VALUES
+                    (:full_name, :email, :phone, :course, :gender, :date_of_birth, :address, :status)';
+
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute([
+            ':full_name'     => trim($d['full_name']),
+            ':email'         => strtolower(trim($d['email'])),
+            ':phone'         => trim($d['phone']),
+            ':course'        => trim($d['course']),
+            ':gender'        => $d['gender'],
+            ':date_of_birth' => $d['date_of_birth'],
+            ':address'       => trim($d['address']),
+            ':status'        => $d['status'] ?? 'Active',
+        ]);
+        return ['success' => true, 'id' => $pdo->lastInsertId(), 'message' => 'Student added successfully!'];
+    }
+
+    // ── SELECT ALL (with optional search/filter) ────────────
+    public static function getAll(string $search = '', string $course = '', string $status = ''): array {
+        $pdo    = getDB();
+        $sql    = 'SELECT * FROM students WHERE 1=1';
+        $params = [];
+
+        if ($search) {
+            $sql .= ' AND (full_name LIKE :search OR email LIKE :search OR phone LIKE :search)';
+            $params[':search'] = '%' . $search . '%';
+        }
+        if ($course) {
+            $sql .= ' AND course = :course';
+            $params[':course'] = $course;
+        }
+        if ($status) {
+            $sql .= ' AND status = :status';
+            $params[':status'] = $status;
+        }
+        $sql .= ' ORDER BY created_at DESC';
+
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute($params);
+        return $stmt->fetchAll();
+    }
+
+    // ── SELECT ONE ──────────────────────────────────────────
+    public static function getOne(int $id): ?array {
+        $stmt = getDB()->prepare('SELECT * FROM students WHERE id = ?');
+        $stmt->execute([$id]);
+        $row = $stmt->fetch();
+        return $row ?: null;
+    }
+
+    // ── UPDATE ──────────────────────────────────────────────
+    public static function update(int $id, array $d): array {
+        $pdo = getDB();
+        // Duplicate email check (exclude self)
+        $chk = $pdo->prepare('SELECT id FROM students WHERE email = ? AND id != ?');
+        $chk->execute([$d['email'], $id]);
+        if ($chk->fetch()) {
+            return ['success' => false, 'message' => 'Email already used by another student.'];
+        }
+
+        $sql = 'UPDATE students SET
+                    full_name     = :full_name,
+                    email         = :email,
+                    phone         = :phone,
+                    course        = :course,
+                    gender        = :gender,
+                    date_of_birth = :date_of_birth,
+                    address       = :address,
+                    status        = :status
+                WHERE id = :id';
+
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute([
+            ':full_name'     => trim($d['full_name']),
+            ':email'         => strtolower(trim($d['email'])),
+            ':phone'         => trim($d['phone']),
+            ':course'        => trim($d['course']),
+            ':gender'        => $d['gender'],
+            ':date_of_birth' => $d['date_of_birth'],
+            ':address'       => trim($d['address']),
+            ':status'        => $d['status'],
+            ':id'            => $id,
+        ]);
+        return ['success' => true, 'message' => 'Student updated successfully!'];
+    }
+
+    // ── DELETE ──────────────────────────────────────────────
+    public static function delete(int $id): array {
+        $stmt = getDB()->prepare('DELETE FROM students WHERE id = ?');
+        $stmt->execute([$id]);
+        return ['success' => true, 'message' => 'Student deleted.'];
+    }
+
+    // ── STATS (dashboard cards) ─────────────────────────────
+    public static function stats(): array {
+        $pdo = getDB();
+        $rows = $pdo->query('
+            SELECT
+                COUNT(*)                                        AS total,
+                SUM(status = "Active")                          AS active,
+                SUM(status = "Inactive")                        AS inactive,
+                SUM(status = "Graduated")                       AS graduated,
+                COUNT(DISTINCT course)                          AS courses
+            FROM students
+        ')->fetch();
+        return $rows;
+    }
+
+    // ── COURSES list for filter dropdown ────────────────────
+    public static function courses(): array {
+        return getDB()
+            ->query('SELECT DISTINCT course FROM students ORDER BY course')
+            ->fetchAll(PDO::FETCH_COLUMN);
+    }
+}
